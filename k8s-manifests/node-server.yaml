@@ -1,0 +1,49 @@
+# ===============================================
+# 1️⃣ Backend Deployment
+# ===============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: socialecho
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: backend-ng    # Updated for EKS nodegroup
+      containers:
+      - name: backend
+        image: mukheshdn/backend:02
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4000
+        
+---
+
+# ===============================================
+# 2️⃣ Backend Service
+# ===============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: socialecho
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - port: 4000
+      targetPort: 4000
+ 
+
+
+
+

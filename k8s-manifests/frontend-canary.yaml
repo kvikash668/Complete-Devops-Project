@@ -1,0 +1,56 @@
+# -------------------------------
+# 2️⃣ Canary Frontend Deployment (v2)
+# -------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-canary
+  namespace: socialecho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: v2
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: frontend-canary-ng   # Updated for EKS nodegroup
+      containers:
+      - name: frontend
+        image: mukheshdn/frontend:10
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-canary
+  namespace: socialecho
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+    version: v2   # Only canary pods
+  ports:
+    - port: 80
+      targetPort: 80
+
+      protocol: TCP
+
+
+

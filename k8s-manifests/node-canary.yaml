@@ -1,0 +1,59 @@
+# ===============================================
+# 🧪 Canary Backend Deployment (v2)
+# ===============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-canary
+  namespace: socialecho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: v2
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: frontend-canary-ng    # Canary node group
+      containers:
+      - name: backend
+        image: mukheshdn/backend:10
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
+---
+
+# ===============================================
+# 🧪 Canary Backend Service
+# ===============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-canary
+  namespace: socialecho
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    version: v2    # Only Canary Pods
+  ports:
+    - port: 4000
+      targetPort: 4000
+
+     
+
+
+
+
