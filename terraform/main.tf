@@ -90,7 +90,7 @@ resource "aws_security_group" "web_sg" {
 ############################
 resource "aws_instance" "app" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+  instance_type = "t2.xlarge"
 
   subnet_id = data.aws_subnets.default.ids[0]
 
