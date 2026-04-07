@@ -1,7 +1,13 @@
-#################
-# Data sources
-#################
+provider "aws" {
+  region = "us-east-1"
+}
 
+############################
+# Variables
+############################
+#defined in variable.tf
+###########
+# vpc-subnet
 data "aws_vpc" "default" {
   default = true
 }
@@ -12,11 +18,13 @@ data "aws_subnets" "default" {
     values = [data.aws_vpc.default.id]
   }
 }
-
-# Latest Ubuntu 22.04 LTS (Jammy)
-data "aws_ami" "ubuntu_jammy" {
+###############
+############################
+# Ubuntu AMI
+############################
+data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners      = ["099720109477"]
 
   filter {
     name   = "name"
@@ -29,46 +37,44 @@ data "aws_ami" "ubuntu_jammy" {
   }
 }
 
-#################
-# Key pair
-#################
+############################
+# Key Pair
+############################
+# resource "aws_key_pair" "deployer" {
+#   key_name   = var.key_name
+#   public_key = file(var.public_key_path)
+# }
 
 resource "aws_key_pair" "deployer" {
   key_name   = var.key_name
-  public_key = file(var.public_key_path)
+  public_key = file(pathexpand(var.public_key_path))
 }
 
-#################
-# Security group
-#################
-
-resource "aws_security_group" "jenkins_sg" {
-  name        = "jenkins-sg-${var.aws_region}"
-  description = "Allow SSH, Jenkins (8080) and SonarQube (9000)"
-  vpc_id      = data.aws_vpc.default.id
+############################
+# Security Group
+############################
+resource "aws_security_group" "web_sg" {
+  name = "web-sg"
 
   ingress {
-    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "Jenkins"
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "SonarQube"
-    from_port   = 9000
-    to_port     = 9000
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -77,134 +83,40 @@ resource "aws_security_group" "jenkins_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = {
-    Name = "jenkins-sg"
-  }
 }
 
-#################
-# IAM Role / Instance Profile
-#################
-
-data "aws_iam_policy_document" "ec2_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ec2_role" {
-  name               = "jenkins-ec2-role"
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-}
-
-resource "aws_iam_role_policy_attachment" "ssm_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "jenkins-ec2-profile"
-  role = aws_iam_role.ec2_role.name
-}
-
-#################
-# IAM User (demo / learning only)
-#################
-
-resource "aws_iam_user" "admin_user" {
-  name = var.iam_user_name
-}
-
-resource "aws_iam_user_policy_attachment" "admin_ec2_attach" {
-  user       = aws_iam_user.admin_user.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-}
-
-resource "aws_iam_access_key" "admin_key" {
-  user = aws_iam_user.admin_user.name
-}
-
-#################
+############################
 # EC2 Instance
-#################
+############################
+resource "aws_instance" "app" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t2.micro"
 
-resource "aws_instance" "jenkins" {
-  ami                         = data.aws_ami.ubuntu_jammy.id
-  instance_type               = var.instance_type
-  key_name                    = aws_key_pair.deployer.key_name
-  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
-  vpc_security_group_ids      = [aws_security_group.jenkins_sg.id]
-  subnet_id                   = data.aws_subnets.default.ids[0]
+  subnet_id = data.aws_subnets.default.ids[0]
+
+  key_name               = aws_key_pair.deployer.key_name
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
   associate_public_ip_address = true
 
   root_block_device {
-    volume_size           = var.root_volume_size_gb
-    volume_type           = "gp3"
-    delete_on_termination = true
+    volume_size = 20
+    volume_type = "gp3"
   }
-
-  user_data = <<-EOF
-#!/bin/bash
-set -euo pipefail
-export DEBIAN_FRONTEND=noninteractive
-
-apt-get update -y
-apt-get install -y \
-  curl wget gnupg lsb-release \
-  openjdk-17-jre-headless \
-  docker.io ufw
-
-systemctl enable --now docker
-
-usermod -aG docker ubuntu
-
-# Firewall
-ufw allow 22
-ufw allow 8080
-ufw allow 9000
-ufw --force enable
-
-# Jenkins
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
-  | tee /etc/apt/keyrings/jenkins.asc > /dev/null
-
-echo "deb [signed-by=/etc/apt/keyrings/jenkins.asc] https://pkg.jenkins.io/debian-stable binary/" \
-  > /etc/apt/sources.list.d/jenkins.list
-
-apt-get update -y
-apt-get install -y jenkins
-
-systemctl enable --now jenkins
-
-# Jenkins hardening
-echo 'JENKINS_ARGS="--argumentsRealm.passwd.admin=disabled --argumentsRealm.roles.admin=admin"' \
-  > /etc/default/jenkins
-
-systemctl restart jenkins
-
-# SonarQube (persistent)
-mkdir -p /opt/sonarqube/data
-
-docker run -d \
-  --name sonarqube \
-  -p 9000:9000 \
-  -v /opt/sonarqube/data:/opt/sonarqube/data \
-  --restart unless-stopped \
-  sonarqube:lts-community
-EOF
 
 
   tags = {
-    Name = "jenkins"
-    Name = "devops"
-    Name = "social-echo"
+    Name = "devops-ec2"
   }
 }
 
+############################
+# Output (use default public IP)
+############################
+output "public_ip" {
+  value = aws_instance.app.public_ip
+}
+
+output "ssh_command" {
+  value = "ssh -i ~/.ssh/id_rsa ubuntu@${aws_instance.app.public_ip}"
+}
