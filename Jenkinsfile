@@ -67,8 +67,8 @@ pipeline {
                cd client && npm install
                cd ../server && npm install
             '''
-    }
-}
+            }
+        }
         stage('SonarQube Quality Analysis') {
             steps {
                 withSonarQubeEnv("Sonar") {
