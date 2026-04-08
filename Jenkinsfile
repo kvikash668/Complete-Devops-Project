@@ -3,8 +3,26 @@ pipeline {
 
     environment {
         // Tool Configuration
-        SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-        
+        // SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        tools {
+        sonarQubeScanner 'Sonar'
+    }
+
+    stages {
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('Sonar') {
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=my-project \
+                      -Dsonar.sources=. \
+                      -Dsonar.java.binaries=.
+                    '''
+                }
+            }
+        }
+    }
+}
         // GitHub Configuration
         GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
