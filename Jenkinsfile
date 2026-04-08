@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    tools {
-        sonar 'Sonar'  // Correct tool type
-    }
+    // tools {
+    //     sonar 'Sonar'  // Correct tool type
+    // }
 
     environment {
         // GitHub
