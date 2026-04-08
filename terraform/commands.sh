@@ -45,6 +45,9 @@ sudo apt install jenkins -y
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
 
+sudo apt update
+sudo apt install -y nodejs npm
+
 ##################################
 # TRIVY INSTALLATION (FIXED)
 ##################################

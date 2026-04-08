@@ -103,51 +103,74 @@ pipeline {
         }
 
         stage('Build & Push Docker') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh """
-                        echo "$PASS" | docker login -u "$USER" --password-stdin
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: "${DOCKER_CREDENTIALS_ID}",
+            usernameVariable: 'USER',
+            passwordVariable: 'PASS'
+        )]) {
+            sh '''
+                set -e
 
-                        cd ${FRONTEND_BUILD_DIR}
-                        docker build -t ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} .
-                        docker push ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}
-                        cd ..
+                echo "$PASS" | docker login -u "$USER" --password-stdin
 
-                        cd ${BACKEND_BUILD_DIR}
-                        docker build -t ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} .
-                        docker push ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}
-                        cd ..
+                # Build Frontend
+                cd ${FRONTEND_BUILD_DIR}
+                docker build -t ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} .
+                docker tag ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:latest
+                docker push ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}
+                docker push ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:latest
+                cd ..
 
-                        docker logout
-                    """
-                }
-            }
-        }
+                # Build Backend
+                cd ${BACKEND_BUILD_DIR}
+                docker build -t ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} .
+                docker tag ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:latest
+                docker push ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}
+                docker push ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:latest
+                cd ..
 
-        stage('Update Kubernetes Manifests') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                    sh """
-                        rm -rf ${K8S_REPO_DIR}
-                        git clone https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git ${K8S_REPO_DIR}
-
-                        cd ${K8S_REPO_DIR}/${K8S_MANIFESTS_PATH}
-
-                        sed -i "s|image: .*|image: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${FRONTEND_CANARY_FILE}
-                        sed -i "s|image: .*|image: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${BACKEND_CANARY_FILE}
-
-                        git config user.email "${GITHUB_USER_EMAIL}"
-                        git config user.name "${GITHUB_USER_NAME}"
-
-                        git add .
-                        git commit -m "Update images - Build ${BUILD_NUMBER}" || echo "No changes"
-
-                        git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git ${K8S_REPO_BRANCH}
-                    """
-                }
-            }
+                docker logout
+            '''
         }
     }
+}
+
+        stage('Update Kubernetes Manifests') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: "${GITHUB_CREDENTIALS_ID}",
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GIT_PASS'
+        )]) {
+            sh '''
+                set -e
+
+                rm -rf ${K8S_REPO_DIR}
+
+                git clone https://github.com/kvikash668/Complete-Devops-Project.git ${K8S_REPO_DIR}
+                cd ${K8S_REPO_DIR}
+
+                git config user.email "${GITHUB_USER_EMAIL}"
+                git config user.name "${GITHUB_USER_NAME}"
+
+                # Inject credentials only for push (secure way)
+                git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git
+
+                cd ${K8S_MANIFESTS_PATH}
+
+                # Update images safely
+                sed -i "s|image: .*frontend.*|image: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${FRONTEND_CANARY_FILE}
+                sed -i "s|image: .*backend.*|image: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${BACKEND_CANARY_FILE}
+
+                git add .
+                git commit -m "Update images - Build ${BUILD_NUMBER}" || echo "No changes to commit"
+
+                git push origin ${K8S_REPO_BRANCH}
+            '''
+        }
+    }
+}
 
     post {
         success {
