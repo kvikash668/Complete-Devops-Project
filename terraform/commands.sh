@@ -26,20 +26,20 @@ sudo usermod -aG docker ubuntu
 ##################################
 echo "===== INSTALL JENKINS ====="
 
-# Add Jenkins key (correct method)
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key \
-  | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+sudo rm -f /etc/apt/sources.list.d/jenkins.list
+sudo rm -f /etc/apt/keyrings/jenkins.gpg
 
-# Add Jenkins repo
-echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" \
-  | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key > /tmp/jenkins.key
 
-# Install Java (required)
-sudo apt-get install -y openjdk-17-jdk
+sudo gpg --no-default-keyring   --keyring /usr/share/keyrings/jenkins-archive-keyring.gpg   --import /tmp/jenkins.key
 
-# Update and install Jenkins
-sudo apt-get update -y
-sudo apt-get install -y jenkins
+echo "deb [signed-by=/usr/share/keyrings/jenkins-archive-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+sudo gpg --no-default-keyring   --keyring /usr/share/keyrings/jenkins-archive-keyring.gpg   --keyserver keyserver.ubuntu.com   --recv-keys 7198F4B714ABFC68
+
+sudo apt update
+
+sudo apt install jenkins -y
 
 # Start Jenkins
 sudo systemctl enable jenkins

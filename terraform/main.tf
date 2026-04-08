@@ -54,7 +54,7 @@ resource "aws_key_pair" "deployer" {
 # Security Group
 ############################
 resource "aws_security_group" "web_sg" {
-  name = "web-sg"
+  name = "web-sg-1"
 
   ingress {
     from_port   = 22
@@ -76,7 +76,25 @@ resource "aws_security_group" "web_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ########################
+  # Jenkins (8080)
+  ########################
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
+  ########################
+  # SonarQube (9000)
+  ########################
+  ingress {
+    from_port   = 9000
+    to_port     = 9000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
