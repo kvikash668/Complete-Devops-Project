@@ -1,314 +1,153 @@
 pipeline {
     agent any
 
-    environment {
-        // Tool Configuration
-        // SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-        tools {
+    tools {
         sonarQubeScanner 'Sonar'
     }
 
-    stages {
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('Sonar') {
-                    sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=my-project \
-                      -Dsonar.sources=. \
-                      -Dsonar.java.binaries=.
-                    '''
-                }
-            }
-        }
-    }
-}
-        // GitHub Configuration
+    environment {
+        // GitHub
         GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
         GITHUB_CREDENTIALS_ID = 'github-pat'
         GITHUB_USER_EMAIL = 'kvikash668@gmail.com'
         GITHUB_USER_NAME = 'Kvikash668'
-        
-        // Kubernetes Repository Configuration
-        K8S_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests'
+
+        // Kubernetes Repo
+        K8S_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         K8S_REPO_BRANCH = 'main'
         K8S_REPO_DIR = 'Kubernetes'
-        K8S_MANIFESTS_PATH = 'kubernetes'
-        
-        // Kubernetes File Names
+        K8S_MANIFESTS_PATH = 'k8s-manifests'
+
+        // Files
         FRONTEND_CANARY_FILE = 'frontend-canary.yaml'
         BACKEND_CANARY_FILE = 'node-canary.yaml'
         FRONTEND_STABLE_FILE = 'frontend-server.yaml'
         BACKEND_STABLE_FILE = 'node-server.yaml'
-        
-        // Docker Configuration
+
+        // Docker
         DOCKER_REGISTRY_USER = 'kvikash668'
-        DOCKERHUB_USER = 'kvikash668'
         DOCKER_CREDENTIALS_ID = 'jenkins-token'
         FRONTEND_IMAGE_NAME = 'frontend'
         BACKEND_IMAGE_NAME = 'backend'
-        
-        // SonarQube Configuration
+
+        // Sonar
         SONAR_PROJECT_NAME = 'socialEcho-1'
         SONAR_PROJECT_KEY = 'socialEcho-1'
         SONAR_ENV = 'Sonar'
-        
-        // OWASP Dependency Check Configuration
+
+        // Security
         OWASP_INSTALL_NAME = 'dc'
         OWASP_REPORT_FILE = 'dependency-check-report.xml'
-        
-        // Trivy Configuration
-        TRIVY_REPORT_FILE = 'trivy-fs-report.html'
-        
-        // Email Configuration
+        TRIVY_REPORT_FILE = 'trivy-report.html'
+
+        // Email
         NOTIFICATION_EMAIL = 'workingvikash@gmail.com'
         EMAIL_FROM = 'jenkins@ci.com'
-        
-        // Build Directories
+
+        // Build dirs
         FRONTEND_BUILD_DIR = 'client'
         BACKEND_BUILD_DIR = 'server'
-        
-        // Quality Gate Timeout (in minutes)
+
         QUALITY_GATE_TIMEOUT = '2'
     }
 
     stages {
-        
-        stage('Clone code from GitHub') {
+
+        stage('Clone Code') {
             steps {
-                script {
-                    echo "📦 Cloning repository: ${GITHUB_REPO_URL}"
-                    git url: "${GITHUB_REPO_URL}", branch: "${GITHUB_BRANCH}"
+                git url: "${GITHUB_REPO_URL}", branch: "${GITHUB_BRANCH}"
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONAR_ENV}") {
+                    sh """
+                        sonar-scanner \
+                        -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY}
+                    """
                 }
             }
         }
 
-        stage('Promote existing Canary → Stable') {
+        stage('Quality Gate') {
             steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh '''
-                            echo "📤 Cloning Kubernetes repo for promotion..."
-                            rm -rf ${K8S_REPO_DIR}
-                            git clone https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_DIR}
-                            cd ${K8S_REPO_DIR}/${K8S_MANIFESTS_PATH}
-
-                            echo "🔄 Promoting existing canary image to stable..."
-                            FRONT_IMG=$(grep "image:" ${FRONTEND_CANARY_FILE} | awk '{print $2}')
-                            BACK_IMG=$(grep "image:" ${BACKEND_CANARY_FILE} | awk '{print $2}')
-
-                            sed -i "s|image: .*|image: ${FRONT_IMG}|" ${FRONTEND_STABLE_FILE}
-                            sed -i "s|image: .*|image: ${BACK_IMG}|" ${BACKEND_STABLE_FILE}
-
-                            echo "✅ Committing and pushing Stable promotion changes..."
-                            git config user.email "${GITHUB_USER_EMAIL}"
-                            git config user.name "${GITHUB_USER_NAME}"
-
-                            git add ${FRONTEND_STABLE_FILE} ${BACKEND_STABLE_FILE}
-                            git commit -m "Promote Canary to Stable - Build #${BUILD_NUMBER}" || echo "No stable changes to commit"
-
-                            git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_BRANCH}
-
-                            cd ../..
-                        '''
-                    }
+                timeout(time: QUALITY_GATE_TIMEOUT.toInteger(), unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage('SonarQube Quality Analysis') {
+        stage('OWASP Scan') {
             steps {
-                script {
-                    echo "🔍 Running SonarQube analysis..."
-                    withSonarQubeEnv("${SONAR_ENV}") {
-                        sh '''
-                            ${SONAR_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY}
-                        '''
-                    }
+                dependencyCheck additionalArguments: "--scan ./", odcInstallation: "${OWASP_INSTALL_NAME}"
+                dependencyCheckPublisher pattern: "${OWASP_REPORT_FILE}"
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                sh "trivy fs -o ${TRIVY_REPORT_FILE} ."
+            }
+        }
+
+        stage('Build & Push Docker') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh """
+                        echo "$PASS" | docker login -u "$USER" --password-stdin
+
+                        cd ${FRONTEND_BUILD_DIR}
+                        docker build -t ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} .
+                        docker push ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}
+                        cd ..
+
+                        cd ${BACKEND_BUILD_DIR}
+                        docker build -t ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} .
+                        docker push ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}
+                        cd ..
+
+                        docker logout
+                    """
                 }
             }
         }
 
-        stage('OWASP Dependency Check') {
+        stage('Update Kubernetes Manifests') {
             steps {
-                script {
-                    echo "🛡️ Running OWASP Dependency Check..."
-                    dependencyCheck additionalArguments: "--scan ./", odcInstallation: "${OWASP_INSTALL_NAME}"
-                    dependencyCheckPublisher pattern: "${OWASP_REPORT_FILE}"
-                }
-            }
-        }
-
-        stage('Sonar Quality Gate') {
-            steps {
-                script {
-                    echo "🚪 Waiting for SonarQube Quality Gate..."
-                    timeout(time: "${QUALITY_GATE_TIMEOUT}".toInteger(), unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
-                    }
-                }
-            }
-        }
-
-        stage('Trivy File System Scan') {
-            steps {
-                script {
-                    echo "🔐 Running Trivy file system scan..."
-                    sh '''
-                        trivy fs --format table -o ${TRIVY_REPORT_FILE} .
-                    '''
-                    publishHTML(target: [
-                        allowMissing: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: '${TRIVY_REPORT_FILE}',
-                        reportName: 'Trivy FS Report'
-                    ])
-                }
-            }
-        }
-
-        stage('Build & Push Docker Images') {
-            steps {
-                script {
-                    echo "🐳 Building and pushing Docker images..."
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
-                        sh '''
-                            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-                            echo "📦 Building and pushing frontend..."
-                            cd ${FRONTEND_BUILD_DIR}
-                            docker build -t ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} .
-                            docker push ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}
-                            cd ..
-
-                            echo "📦 Building and pushing backend..."
-                            cd ${BACKEND_BUILD_DIR}
-                            docker build -t ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} .
-                            docker push ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}
-                            cd ..
-
-                            docker logout
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Update Canary with New Images') {
-            steps {
-                script {
-                    echo "🔄 Updating Canary deployment with new images..."
-                    sh '''
-                        echo "📤 Cloning Kubernetes repo for canary update..."
+                withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
                         rm -rf ${K8S_REPO_DIR}
-                        git clone ${K8S_REPO_URL} ${K8S_REPO_DIR}
+                        git clone https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git ${K8S_REPO_DIR}
+
                         cd ${K8S_REPO_DIR}/${K8S_MANIFESTS_PATH}
 
-                        echo "📝 Updating canary YAML files with new images..."
-                        sed -i "s|image: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:.*|image: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${FRONTEND_CANARY_FILE}
-                        sed -i "s|image: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:.*|image: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${BACKEND_CANARY_FILE}
+                        sed -i "s|image: .*|image: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${FRONTEND_CANARY_FILE}
+                        sed -i "s|image: .*|image: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}|" ${BACKEND_CANARY_FILE}
 
-                        cd ../..
-                    '''
-                }
-            }
-        }
+                        git config user.email "${GITHUB_USER_EMAIL}"
+                        git config user.name "${GITHUB_USER_NAME}"
 
-        stage('Commit & Push to GitHub (for ArgoCD sync)') {
-            steps {
-                script {
-                    echo "📤 Committing and pushing updated manifests to GitHub..."
-                    withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh '''
-                            echo "📝 Committing and pushing updated YAMLs to Kubernetes repo..."
-                            cd ${K8S_REPO_DIR}
-                            git config --global user.email "${GITHUB_USER_EMAIL}"
-                            git config --global user.name "${GITHUB_USER_NAME}"
+                        git add .
+                        git commit -m "Update images - Build ${BUILD_NUMBER}" || echo "No changes"
 
-                            git add ${K8S_MANIFESTS_PATH}/${FRONTEND_CANARY_FILE} \
-                                   ${K8S_MANIFESTS_PATH}/${BACKEND_CANARY_FILE} \
-                                   ${K8S_MANIFESTS_PATH}/${FRONTEND_STABLE_FILE} \
-                                   ${K8S_MANIFESTS_PATH}/${BACKEND_STABLE_FILE}
-                            
-                            git commit -m "Update Canary & Promote Stable - Build #${BUILD_NUMBER}" || echo "No new canary changes to commit"
-
-                            git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_BRANCH}
-
-                            cd ..
-                        '''
-                    }
+                        git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git ${K8S_REPO_BRANCH}
+                    """
                 }
             }
         }
     }
 
     post {
-
-    success {
-        script {
-            echo "✅ Pipeline succeeded."
-
-            mail to: "${NOTIFICATION_EMAIL}",
-                 from: "${EMAIL_FROM}",
-                 subject: "✅ Jenkins Build SUCCESS: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                 body: """
-Hello,
-
-The Jenkins pipeline ${env.JOB_NAME} has completed SUCCESSFULLY. 🎉
-
-Build Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Build Number: ${env.BUILD_NUMBER}
-Status: SUCCESS ✅
-Project: SocialEcho
-Duration: ${currentBuild.durationString}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You can view the build here:
-${env.BUILD_URL}
-
-Regards,  
-Jenkins CI/CD Pipeline
-"""
+        success {
+            echo "✅ SUCCESS"
         }
-    }
-
-    failure {
-        script {
-            echo "❌ Pipeline failed."
-
-            mail to: "${NOTIFICATION_EMAIL}",
-                 from: "${EMAIL_FROM}",
-                 subject: "❌ Jenkins Build FAILED: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                 body: """
-Hello,
-
-The Jenkins pipeline ${env.JOB_NAME} has FAILED. ❌
-
-Build Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Build Number: ${env.BUILD_NUMBER}
-Status: FAILURE ❌
-Project: SocialEcho
-Duration: ${currentBuild.durationString}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Please check the Jenkins console logs:
-${env.BUILD_URL}console
-
-Regards,  
-Jenkins CI/CD Pipeline
-"""
+        failure {
+            echo "❌ FAILED"
         }
-    }
-
-    always {
-        script {
-            echo "🧹 Cleaning up workspace..."
+        always {
             cleanWs()
         }
     }
