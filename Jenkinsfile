@@ -247,70 +247,69 @@ pipeline {
     }
 
     post {
-        success {
-            script {
-                echo "✅ Pipeline completed successfully. Docker images pushed with tag ${BUILD_NUMBER}."
-                mail to: "${NOTIFICATION_EMAIL}",
-                     from: "${EMAIL_FROM}",
-                     subject: "✅ Jenkins Build SUCCESS: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                     body: """
+
+    success {
+        script {
+            echo "✅ Pipeline succeeded."
+
+            mail to: "${NOTIFICATION_EMAIL}",
+                 from: "${EMAIL_FROM}",
+                 subject: "✅ Jenkins Build SUCCESS: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
+                 body: """
 Hello,
 
-The Jenkins pipeline ${env.JOB_NAME} completed successfully. ✅
+The Jenkins pipeline ${env.JOB_NAME} has completed SUCCESSFULLY. 🎉
 
 Build Details:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Build Number: ${BUILD_NUMBER}
+Build Number: ${env.BUILD_NUMBER}
 Status: SUCCESS ✅
 Project: SocialEcho
 Duration: ${currentBuild.durationString}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Docker Images Pushed:
-  • Frontend: ${DOCKER_REGISTRY_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}
-  • Backend: ${DOCKER_REGISTRY_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}
+You can view the build here:
+${env.BUILD_URL}
 
-View Build Details: ${env.BUILD_URL}
-
-Regards,
+Regards,  
 Jenkins CI/CD Pipeline
 """
-            }
         }
+    }
 
-        failure {
-            script {
-                echo "❌ Pipeline failed."
-                mail to: "${NOTIFICATION_EMAIL}",
-                     from: "${EMAIL_FROM}",
-                     subject: "❌ Jenkins Build FAILED: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                     body: """
+    failure {
+        script {
+            echo "❌ Pipeline failed."
+
+            mail to: "${NOTIFICATION_EMAIL}",
+                 from: "${EMAIL_FROM}",
+                 subject: "❌ Jenkins Build FAILED: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
+                 body: """
 Hello,
 
 The Jenkins pipeline ${env.JOB_NAME} has FAILED. ❌
 
 Build Details:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Build Number: ${BUILD_NUMBER}
+Build Number: ${env.BUILD_NUMBER}
 Status: FAILURE ❌
 Project: SocialEcho
 Duration: ${currentBuild.durationString}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Please check the Jenkins console logs for more details:
+Please check the Jenkins console logs:
 ${env.BUILD_URL}console
 
-Regards,
+Regards,  
 Jenkins CI/CD Pipeline
 """
-            }
         }
+    }
 
-        always {
-            script {
-                echo "🧹 Cleaning up workspace..."
-                cleanWs()
-            }
+    always {
+        script {
+            echo "🧹 Cleaning up workspace..."
+            cleanWs()
         }
     }
 }
