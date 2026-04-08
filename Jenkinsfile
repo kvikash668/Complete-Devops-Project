@@ -61,7 +61,14 @@ pipeline {
                 git url: "${GITHUB_REPO_URL}", branch: "${GITHUB_BRANCH}"
             }
         }
-
+        stage('Install Dependencies') {
+            steps {
+               sh '''
+               cd client && npm install
+               cd ../server && npm install
+            '''
+    }
+}
         stage('SonarQube Quality Analysis') {
             steps {
                 withSonarQubeEnv("Sonar") {
