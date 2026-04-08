@@ -7,6 +7,8 @@ pipeline {
 
     environment {
         // GitHub
+        SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+
         GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
         GITHUB_CREDENTIALS_ID = 'github-pat'
@@ -32,9 +34,9 @@ pipeline {
         BACKEND_IMAGE_NAME = 'backend'
 
         // Sonar
-        SONAR_PROJECT_NAME = 'socialEcho-1'
-        SONAR_PROJECT_KEY = 'socialEcho-1'
-        SONAR_ENV = 'Sonar'
+        // SONAR_PROJECT_NAME = 'socialEcho-1'
+        // SONAR_PROJECT_KEY = 'socialEcho-1'
+        // SONAR_ENV = 'Sonar'
 
         // Security
         OWASP_INSTALL_NAME = 'dc'
@@ -60,14 +62,14 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('SonarQube Quality Analysis') {
             steps {
-                withSonarQubeEnv("${SONAR_ENV}") {
-                    sh """
-                        sonar-scanner \
-                        -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY}
-                    """
+                withSonarQubeEnv("Sonar") {
+                    sh '''
+                        ${SONAR_HOME}/bin/sonar-scanner \
+                        -Dsonar.projectName=socialEcho-1 \
+                        -Dsonar.projectKey=socialEcho-1
+                    '''
                 }
             }
         }
