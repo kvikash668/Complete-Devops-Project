@@ -6,7 +6,7 @@ pipeline {
         SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
         
         // GitHub Configuration
-        GITHUB_REPO_URL = 'https://github.com/kvikash668/SocialEcho.git'
+        GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
         GITHUB_CREDENTIALS_ID = 'github-pat'
         GITHUB_USER_EMAIL = 'kvikash668@gmail.com'
@@ -73,7 +73,7 @@ pipeline {
                         sh '''
                             echo "📤 Cloning Kubernetes repo for promotion..."
                             rm -rf ${K8S_REPO_DIR}
-                            git clone https://$GIT_USER:$GIT_PASS@github.com/MukheshDN4352/Kubernetes.git ${K8S_REPO_DIR}
+                            git clone https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_DIR}
                             cd ${K8S_REPO_DIR}/${K8S_MANIFESTS_PATH}
 
                             echo "🔄 Promoting existing canary image to stable..."
@@ -90,7 +90,7 @@ pipeline {
                             git add ${FRONTEND_STABLE_FILE} ${BACKEND_STABLE_FILE}
                             git commit -m "Promote Canary to Stable - Build #${BUILD_NUMBER}" || echo "No stable changes to commit"
 
-                            git push https://$GIT_USER:$GIT_PASS@github.com/MukheshDN4352/Kubernetes.git ${K8S_REPO_BRANCH}
+                            git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_BRANCH}
 
                             cd ../..
                         '''
