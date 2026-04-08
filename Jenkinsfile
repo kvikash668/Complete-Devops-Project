@@ -51,7 +51,7 @@ pipeline {
         FRONTEND_BUILD_DIR = 'client'
         BACKEND_BUILD_DIR = 'server'
 
-        QUALITY_GATE_TIMEOUT = '2'
+        QUALITY_GATE_TIMEOUT = '5'
     }
 
     stages {
@@ -81,7 +81,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('OWASP Scan') {
             steps {
                 dependencyCheck additionalArguments: "--scan ./", odcInstallation: "${OWASP_INSTALL_NAME}"
