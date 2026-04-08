@@ -39,7 +39,7 @@ pipeline {
         // SONAR_ENV = 'Sonar'
 
         // Security
-        OWASP_INSTALL_NAME = 'dc'
+        OWASP_INSTALL_NAME = 'dependency-check'
         OWASP_REPORT_FILE = 'dependency-check-report.xml'
         TRIVY_REPORT_FILE = 'trivy-report.html'
 
