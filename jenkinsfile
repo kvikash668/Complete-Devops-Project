@@ -218,7 +218,7 @@ pipeline {
                             
                             git commit -m "Update Canary & Promote Stable - Build #${BUILD_NUMBER}" || echo "No new canary changes to commit"
 
-                            git push https://$GIT_USER:$GIT_PASS@github.com/MukheshDN4352/Kubernetes.git ${K8S_REPO_BRANCH}
+                            git push https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project/tree/main/k8s-manifests ${K8S_REPO_BRANCH}
 
                             cd ..
                         '''
