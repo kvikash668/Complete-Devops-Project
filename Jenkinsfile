@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        sonarQubeScanner 'Sonar'
+        sonar 'Sonar'  // Correct tool type
     }
 
     environment {
