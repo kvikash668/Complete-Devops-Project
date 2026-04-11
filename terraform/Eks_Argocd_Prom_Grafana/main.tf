@@ -7,8 +7,10 @@ provider "aws" {
 }
 
 ########################################
-# USE EXISTING VPC & SUBNETS (YOUR SETUP)
+# DATA
 ########################################
+
+data "aws_caller_identity" "current" {}
 
 data "aws_vpc" "default" {
   default = true
@@ -122,11 +124,12 @@ resource "aws_eks_addon" "ebs_csi" {
 }
 
 ########################################
-# ALB CONTROLLER (IRSA)
+# ALB CONTROLLER IRSA (FIXED MODULE)
 ########################################
 
 module "alb_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.4.0"
 
   role_name = "AmazonEKSLoadBalancerControllerRole"
 
@@ -144,7 +147,7 @@ module "alb_irsa" {
 }
 
 ########################################
-# HELM PROVIDER (CONNECT TO EKS)
+# KUBERNETES & HELM PROVIDERS
 ########################################
 
 data "aws_eks_cluster" "cluster" {
@@ -153,6 +156,14 @@ data "aws_eks_cluster" "cluster" {
 
 data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(
+    data.aws_eks_cluster.cluster.certificate_authority[0].data
+  )
+  token = data.aws_eks_cluster_auth.cluster.token
 }
 
 provider "helm" {
@@ -166,7 +177,22 @@ provider "helm" {
 }
 
 ########################################
-# ALB CONTROLLER INSTALL
+# SERVICE ACCOUNT (REQUIRED FOR IRSA)
+########################################
+
+resource "kubernetes_service_account" "alb_sa" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = module.alb_irsa.iam_role_arn
+    }
+  }
+}
+
+########################################
+# ALB CONTROLLER INSTALL (HELM)
 ########################################
 
 resource "helm_release" "alb_controller" {
@@ -176,7 +202,11 @@ resource "helm_release" "alb_controller" {
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
 
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks,
+    module.alb_irsa,
+    kubernetes_service_account.alb_sa
+  ]
 
   set {
     name  = "clusterName"
@@ -210,4 +240,8 @@ resource "helm_release" "alb_controller" {
 
 output "cluster_name" {
   value = module.eks.cluster_name
+}
+
+output "cluster_endpoint" {
+  value = data.aws_eks_cluster.cluster.endpoint
 }
