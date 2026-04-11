@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 CLUSTER_NAME="test"
@@ -9,7 +8,6 @@ echo "=============================="
 echo "1. Configure kubectl"
 echo "=============================="
 aws eks update-kubeconfig --region $REGION --name $CLUSTER_NAME
-
 kubectl get nodes
 
 echo "=============================="
@@ -59,7 +57,11 @@ eksctl create iamserviceaccount \
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update
 
-VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
+VPC_ID=$(aws eks describe-cluster \
+  --name $CLUSTER_NAME \
+  --region $REGION \
+  --query "cluster.resourcesVpcConfig.vpcId" \
+  --output text)
 
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
@@ -78,31 +80,37 @@ kubectl create namespace argocd || true
 kubectl apply -n argocd \
   -f https://raw.githubusercontent.com/argoproj/argocd/stable/manifests/install.yaml
 
-echo "Waiting for ArgoCD pods..."
-kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
-
-echo "=============================="
-echo "6. Expose ArgoCD via LoadBalancer"
-echo "=============================="
+kubectl wait --for=condition=available \
+  --timeout=300s deployment/argocd-server -n argocd
 
 kubectl patch svc argocd-server -n argocd \
   -p '{"spec": {"type": "LoadBalancer"}}'
 
-echo "Waiting for LoadBalancer..."
-sleep 30
-
-ARGOCD_URL=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
 echo "=============================="
-echo "🎉 ArgoCD is Ready!"
+echo "6. Install Prometheus + Grafana"
 echo "=============================="
 
-echo "URL: http://$ARGOCD_URL"
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 
-echo "Fetching initial password..."
+kubectl create namespace prometheus || true
 
-PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d)
+helm install monitoring prometheus-community/kube-prometheus-stack -n prometheus
 
-echo "Username: admin"
-echo "Password: $PASSWORD"
+echo "=============================="
+echo "🎉 SETUP COMPLETE"
+echo "=============================="
+
+kubectl get nodes
+kubectl get pods -A
+kubectl get svc -A
+
+echo "execute these after suucess--kubectl apply -f namespace.yaml
+kubectl apply -f secrets.yaml
+kubectl apply -f mongo-server.yaml
+kubectl apply -f mongo-express-server.yaml
+kubectl apply -f node-canary.yaml
+kubectl apply -f node-server.yaml
+kubectl apply -f frontend-server.yaml
+kubectl apply -f frontend-canary.yaml
+kubectl apply -f ingress.yaml "
