@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        // SONAR_HOME = tool name: 'Sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        
+        SONAR_HOME = tool('Sonar')
 
         GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
@@ -55,13 +57,26 @@ pipeline {
             }
         }
 
+        // stage('SonarQube Quality Analysis') {
+        //     steps {
+        //         withSonarQubeEnv("Sonar") {
+        //             sh '''
+        //                 ${SONAR_HOME}/bin/sonar-scanner \
+        //                 -Dsonar.projectName=socialEcho-1 \
+        //                 -Dsonar.projectKey=socialEcho-1
+        //             '''
+        //         }
+        //     }
+        // } 
         stage('SonarQube Quality Analysis') {
             steps {
                 withSonarQubeEnv("Sonar") {
                     sh '''
                         ${SONAR_HOME}/bin/sonar-scanner \
                         -Dsonar.projectName=socialEcho-1 \
-                        -Dsonar.projectKey=socialEcho-1
+                        -Dsonar.projectKey=socialEcho-1 \
+                        -Dsonar.sources=. \
+                        -Dsonar.exclusions=**/node_modules/**
                     '''
                 }
             }
