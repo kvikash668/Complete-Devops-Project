@@ -8,7 +8,7 @@ pipeline {
 
         GITHUB_REPO_URL = 'https://github.com/kvikash668/Complete-Devops-Project.git'
         GITHUB_BRANCH = 'main'
-        GITHUB_CREDENTIALS_ID = 'github-pat'
+        GITHUB_CREDENTIALS_ID = 'Jenkins-Pipeline'
         GITHUB_USER_EMAIL = 'kvikash668@gmail.com'
         GITHUB_USER_NAME = 'Kvikash668'
 
@@ -153,7 +153,7 @@ pipeline {
                         git config user.email "${GITHUB_USER_EMAIL}"
                         git config user.name "${GITHUB_USER_NAME}"
 
-                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/kvikash668/Complete-Devops-Project.git
+                        git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/kvikash668/Complete-Devops-Project.git
 
                         cd ${K8S_MANIFESTS_PATH}
 
