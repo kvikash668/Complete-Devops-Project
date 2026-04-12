@@ -1,2 +1,8 @@
 gate is failing 
 classic token will work
+
+Terraform 
+
+under bootstrap tf apply 
+under terraform tf apply & setup.sh
+under EKS -- tf apply & setup.sh & under k*smanefist -- setup.sh from 5th steps
