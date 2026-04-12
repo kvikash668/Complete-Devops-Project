@@ -1,0 +1,31 @@
+grafana:
+  enabled: true
+
+  adminUser: admin
+  adminPassword: admin12345   # 🔐 Grafana login
+
+  service:
+    type: LoadBalancer
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+
+  service:
+    type: LoadBalancer   # Prometheus UI exposed via ALB/NLB
+
+alertmanager:
+  enabled: true
+
+  service:
+    type: ClusterIP
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true

@@ -1,34 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: backend-canary
   namespace: socialecho
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: backend
+      version: canary
   template:
     metadata:
       labels:
         app: backend
+        version: canary
     spec:
       nodeSelector:
         app: backend
+        version: canary
       containers:
       - name: backend
-        image: kvikash668/backend:02
+        image: kvikash668/backend:15
         ports:
         - containerPort: 4000
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend
+  name: backend-canary
   namespace: socialecho
 spec:
   selector:
     app: backend
+    version: canary
   ports:
     - port: 4000
       targetPort: 4000

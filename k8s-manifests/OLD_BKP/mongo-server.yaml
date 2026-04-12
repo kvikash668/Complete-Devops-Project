@@ -1,0 +1,88 @@
+# ===============================================
+# 1️⃣ StorageClass - Automatic EBS Provisioning
+# ===============================================
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3
+  fsType: ext4
+
+---
+
+# ===============================================
+# 2️⃣ PersistentVolumeClaim (PVC)
+# ===============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+  namespace: socialecho
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ebs-gp3     # <--- links to StorageClass
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+# ===============================================
+# 3️⃣ MongoDB Deployment
+# ===============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+  namespace: socialecho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: db-ng
+      containers:
+      - name: mongo
+        image: mongo:6
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "admin"
+        volumeMounts:
+        - name: mongo-storage
+          mountPath: /data/db
+      volumes:
+      - name: mongo-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc
+
+---
+
+# ===============================================
+# 4️⃣ MongoDB Service
+# ===============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: socialecho
+spec:
+  type: ClusterIP
+  selector:
+    app: mongo
+  ports:
+    - port: 27017
+      targetPort: 27017

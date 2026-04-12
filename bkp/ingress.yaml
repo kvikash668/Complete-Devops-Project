@@ -6,23 +6,26 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
-    alb.ingress.kubernetes.io/healthcheck-path: /
-    alb.ingress.kubernetes.io/success-codes: "200,301,302,404"
-    alb.ingress.kubernetes.io/actions.frontend: >-
+
+    # FRONTEND CANARY WEIGHTING
+    alb.ingress.kubernetes.io/actions.frontend: >
       {"type":"forward","forwardConfig":{"targetGroups":[
         {"serviceName":"frontend","servicePort":"80","weight":90},
         {"serviceName":"frontend-canary","servicePort":"80","weight":10}
       ]}}
-    alb.ingress.kubernetes.io/actions.backend: >-
+
+    # BACKEND CANARY WEIGHTING
+    alb.ingress.kubernetes.io/actions.backend: >
       {"type":"forward","forwardConfig":{"targetGroups":[
         {"serviceName":"backend","servicePort":"4000","weight":90},
         {"serviceName":"backend-canary","servicePort":"4000","weight":10}
       ]}}
+
 spec:
   ingressClassName: alb
   rules:
-    - http:
+    - host: www.socialecho.com
+      http:
         paths:
           - path: /api
             pathType: Prefix
@@ -31,6 +34,7 @@ spec:
                 name: backend
                 port:
                   name: use-annotation
+
           - path: /
             pathType: Prefix
             backend:

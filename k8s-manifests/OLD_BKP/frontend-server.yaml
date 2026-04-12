@@ -1,0 +1,58 @@
+# -------------------------------
+# 1️⃣ Stable Frontend Deployment (v1)
+# -------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-stable
+  namespace: socialecho
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: frontend
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: v1
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: frontend-canary-ng     # Updated for EKS nodegroup
+      containers:
+      - name: frontend
+        image: mukheshdn/frontend:02
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
+
+---
+
+# -------------------------------
+# 3️⃣ Frontend Service (Common)
+# -------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: socialecho
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+    version: v1   # Only stable pods
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+
+
+
+

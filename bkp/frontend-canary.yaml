@@ -1,37 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-stable
+  name: frontend-canary
   namespace: socialecho
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
-      version: v1
+      version: canary
   template:
     metadata:
       labels:
         app: frontend
-        version: v1
+        version: canary
     spec:
       nodeSelector:
         app: frontend
+        version: canary
       containers:
       - name: frontend
-        image: kvikash668/frontend:02
+        image: kvikash668/frontend:15
         ports:
         - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: frontend-canary
   namespace: socialecho
 spec:
   selector:
     app: frontend
-    version: v1
+    version: canary
   ports:
     - port: 80
       targetPort: 80

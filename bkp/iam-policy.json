@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateServiceLinkedRole",
+        "ec2:Describe*",
+        "ec2:Get*",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "elasticloadbalancing:*",
+        "elasticloadbalancing:Describe*",
+        "acm:ListCertificates",
+        "acm:DescribeCertificate",
+        "iam:ListServerCertificates",
+        "iam:GetServerCertificate",
+        "waf-regional:*",
+        "wafv2:*",
+        "shield:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: socialecho-ingress
+  namespace: socialecho
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # FRONTEND CANARY
+    alb.ingress.kubernetes.io/actions.frontend: |
+      {
+        "type": "forward",
+        "forwardConfig": {
+          "targetGroups": [
+            { "serviceName": "frontend", "servicePort": "80", "weight": 90 },
+            { "serviceName": "frontend-canary", "servicePort": "80", "weight": 10 }
+          ]
+        }
+      }
+
+    # BACKEND CANARY
+    alb.ingress.kubernetes.io/actions.backend: |
+      {
+        "type": "forward",
+        "forwardConfig": {
+          "targetGroups": [
+            { "serviceName": "backend", "servicePort": "4000", "weight": 90 },
+            { "serviceName": "backend-canary", "servicePort": "4000", "weight": 10 }
+          ]
+        }
+      }
+
+spec:
+  ingressClassName: alb
+  rules:
+    - host: www.socialecho.com
+      http:
+        paths:
+
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  name: use-annotation
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: use-annotation
+

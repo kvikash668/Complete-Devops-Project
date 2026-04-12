@@ -177,12 +177,7 @@ step_ebs_csi_driver() {
     -n kube-system \
     --timeout=120s
 }
-###################
-###Apply ALB Controller Manifests######
-bash alb_setup_policy.sh
 
-
-#############
 step_deploy_manifests() {
   kubectl apply -f namespace.yaml            || echo "⚠️  namespace.yaml failed or missing"
   kubectl apply -f secrets.yaml              || echo "⚠️  secrets.yaml failed or missing"
@@ -326,8 +321,6 @@ step_monitoring() {
   kubectl get pods -n prometheus
   kubectl get svc  -n prometheus
 
-
-  [ -f "ingress.yaml" ]    && kubectl apply -f ingress.yaml    || true
   [ -f "grafana-ingress.yaml" ]    && kubectl apply -f grafana-ingress.yaml    || true
   [ -f "prometheus-ingress.yaml" ] && kubectl apply -f prometheus-ingress.yaml || true
 
