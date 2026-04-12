@@ -75,7 +75,7 @@ module "eks" {
   access_entries = {
     admin_user = {
       kubernetes_groups = []
-      principal_arn     = "arn:aws:iam::906345525506:user/KVIKASH668"
+      principal_arn     = "arn:aws:iam::*****:user/KVIKASH668"
 
       policy_associations = {
         admin = {
