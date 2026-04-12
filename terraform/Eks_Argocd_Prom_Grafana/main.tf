@@ -35,7 +35,7 @@ variable "cluster_name" {
 variable "admin_iam_arn" {
   description = "IAM user/role ARN that gets cluster-admin access"
   type        = string
-  default     = "arn:aws:iam::906345525506:user/KVIKASH668"
+  default     = "arn:aws:iam::*****:user/KVIKASH668"
 }
 
 ########################################
