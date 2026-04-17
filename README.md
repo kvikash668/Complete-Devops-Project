@@ -1,12 +1,12 @@
-🚀 End-to-End DevSecOps Pipeline with GitOps on AWS EKS
+<img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/4e2f01ce-b6e3-431d-b505-0c18cb78252d" />🚀 End-to-End DevSecOps Pipeline with GitOps on AWS EKS
 🔐 Secure • ⚙️ Automated • ☁️ Cloud-Native • 📦 Production-Ready
-🎯 Project Summary
+**🎯 Project Summary**
 
 A production-grade DevSecOps pipeline that automates the complete lifecycle of a three-tier MERN application (Socio-Echo) — from code commit to secure deployment on AWS EKS using GitOps principles.
 
 This project integrates CI/CD, security scanning, containerization, and Kubernetes deployment, ensuring high reliability, security compliance, and scalability.
 
-💡 Why This Project Stands Out
+**💡 Why This Project Stands Out**
 🔄 Fully Automated CI/CD Pipeline (Zero manual intervention)
 🔐 Shift-Left Security (SAST + Dependency + Container scanning)
 ☸️ GitOps Deployment using ArgoCD
@@ -19,7 +19,7 @@ This project integrates CI/CD, security scanning, containerization, and Kubernet
 
 
 
-🔁 End-to-End Workflow
+**🔁 End-to-End Workflow**
 Developer → GitHub → Jenkins → Security Scans → Docker → GitHub (Manifests) → ArgoCD → AWS EKS → Monitoring
 ⚙️ CI/CD Pipeline Breakdown (Jenkins)
 🔹 Pipeline Stages
@@ -43,7 +43,7 @@ Container Security: Trivy scans images before deployment
 
 👉 Ensures secure-by-design deployment pipeline
 
-🔄 GitOps with ArgoCD
+**🔄 GitOps with ArgoCD**
 Declarative Kubernetes manifests stored in GitHub
 ArgoCD continuously monitors repository
 Auto-sync ensures cluster = Git state
@@ -51,7 +51,8 @@ Enables:
 Rollbacks
 Version control
 Auditability
-☸️ Kubernetes Deployment (EKS)
+
+**☸️ Kubernetes Deployment (EKS)**
 <img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/eb0006a8-24ac-43eb-9d61-dc7bae6e6e4d" />
 
 Resources Implemented
@@ -67,9 +68,9 @@ Traffic splitting between:
 Stable version
 Canary version
 
-👉 Minimizes production risk
+**👉 Minimizes production risk**
 
-📊 Monitoring & Observability
+**📊 Monitoring & Observability**
 <img width="840" height="458" alt="image" src="https://github.com/user-attachments/assets/9e50e558-98d8-476b-a018-49c6db2ae25e" />
 
 Prometheus → Metrics collection
@@ -78,8 +79,9 @@ Tracks:
 Pod health
 CPU/Memory usage
 Application performance
-🧪 Validation & Results
 
+
+**🧪 Validation & Results**
 ✔️ Jenkins pipeline executed successfully
 ✔️ Code quality validated via SonarQube
 ✔️ Vulnerabilities detected & mitigated
@@ -87,7 +89,7 @@ Application performance
 ✔️ Application live on AWS EKS
 ✔️ Monitoring dashboards operational
 
-📦 Application Details
+**📦 Application Details**
 
 Socio-Echo (MERN Stack)
 
@@ -98,7 +100,7 @@ Database	MongoDB
 
 🔗 GitHub: https://github.com/kvikash668/SocialEcho.git
 
-🛠️ Tech Stack
+**🛠️ Tech Stack**
 CI/CD: Jenkins
 Security: SonarQube, OWASP, Trivy
 Containerization: Docker
@@ -106,23 +108,29 @@ Orchestration: Kubernetes (EKS)
 GitOps: ArgoCD
 Monitoring: Prometheus, Grafana
 Cloud: AWS
-🧠 Key Learnings
+
+**🧠 Key Learnings**
 Implementing real-world DevSecOps workflows
 Managing production-grade Kubernetes deployments
 Integrating security into CI/CD pipelines
 Applying GitOps principles for reliability
 Handling multi-stage automation in cloud environments
-📈 Future Enhancements
+
+
+
+**📈 Future Enhancements**
 🔵 Add Blue-Green Deployment
 🔵 Integrate HashiCorp Vault for secrets
 🔵 Add Helm charts for templating
 🔵 Implement Autoscaling (HPA)
 🔵 Add Service Mesh (Istio)
-👤 Author
 
+
+**👤 Author**
 Vikash Kumar
 DevOps | Cloud | Kubernetes | CI/CD
 
 📄 License
 
-Educational & Demonstration Use
+**Educational & Demonstration Use
+**
