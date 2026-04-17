@@ -23,7 +23,9 @@ This project integrates CI/CD, security scanning, containerization, and Kubernet
 Developer → GitHub → Jenkins → Security Scans → Docker → GitHub (Manifests) → ArgoCD → AWS EKS → Monitoring
 ⚙️ CI/CD Pipeline Breakdown (Jenkins)
 🔹 Pipeline Stages
-Stage	Tool	Purpose
+
+
+**Stage	Tool	Purpose**
 1	GitHub	Source Code Trigger
 2	Jenkins	Pipeline Orchestration
 3	SonarQube	Static Code Analysis (SAST)
@@ -32,7 +34,10 @@ Stage	Tool	Purpose
 6	Docker	Build & Push Image
 7	Git	Update Kubernetes Manifests
 8	ArgoCD	GitOps Deployment
-🔐 DevSecOps Implementation
+
+
+
+**🔐 DevSecOps Implementation**
 Security Integrated at Every Layer
 SAST: SonarQube identifies code smells & vulnerabilities
 Dependency Scanning: OWASP detects vulnerable libraries
@@ -54,14 +59,16 @@ Auditability
 
 **☸️ Kubernetes Deployment (EKS)**
 <img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/eb0006a8-24ac-43eb-9d61-dc7bae6e6e4d" />
-<img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/4e2f01ce-b6e3-431d-b505-0c18cb78252d" />
+
 Resources Implemented
 Deployments → Pod lifecycle management
 Services → Internal/External exposure
 Ingress (ALB) → HTTP routing
 ConfigMaps & Secrets → Configuration management
 Namespaces → Environment isolation
-🚀 Deployment Strategy
+
+
+**🚀 Deployment Strategy**
 Canary + Stable Release
 Gradual rollout of new versions
 Traffic splitting between:
