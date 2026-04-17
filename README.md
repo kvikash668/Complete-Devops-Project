@@ -1,4 +1,4 @@
-<img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/4e2f01ce-b6e3-431d-b505-0c18cb78252d" />🚀 End-to-End DevSecOps Pipeline with GitOps on AWS EKS
+🚀 **End-to-End DevSecOps Pipeline with GitOps on AWS EKS**
 🔐 Secure • ⚙️ Automated • ☁️ Cloud-Native • 📦 Production-Ready
 **🎯 Project Summary**
 
@@ -54,7 +54,7 @@ Auditability
 
 **☸️ Kubernetes Deployment (EKS)**
 <img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/eb0006a8-24ac-43eb-9d61-dc7bae6e6e4d" />
-
+<img width="727" height="291" alt="image" src="https://github.com/user-attachments/assets/4e2f01ce-b6e3-431d-b505-0c18cb78252d" />
 Resources Implemented
 Deployments → Pod lifecycle management
 Services → Internal/External exposure
